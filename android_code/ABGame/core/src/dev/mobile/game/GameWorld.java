@@ -19,7 +19,9 @@ import dev.mobile.helpers.AssetLoader;
 public class GameWorld {
 
     public enum GameState { MENU, RUNNINGEASY, RUNNINGMED, RUNNINGHARD, GAMEOVER }
+    public enum GameDifficulty { EASY, MEDIUM, HARD }
     private GameState currentGameState = GameState.MENU;
+    private GameDifficulty currentGameDifficulty;
 
     private int gameWidth;
     private int gameHeight;
@@ -40,14 +42,16 @@ public class GameWorld {
     private boolean medBallsInit = false;
     private boolean hardBallsInit = false;
     public float countDown = 0;
+    public float gameTime;
 
 
     public GameWorld(int gameWidth, int gameHeight){
 
         this.gameWidth = gameWidth;
         this.gameHeight = gameHeight;
+        this.gameTime = 0;
 
-        // Initialize menu objects
+        // Initialize main menu objects
         easy = new Ball(this, gameWidth/2, gameHeight/2, 0, 0);
         easy.setBoundingCircleRadius(easy.getRadius() + 10);
         med  = new Ball(this, gameWidth/3, gameHeight/3, 0, 0);
@@ -93,6 +97,21 @@ public class GameWorld {
                     mainBall.reset();
                     projectiles.clear();
                     dangerBalls.clear();
+
+                    // Update high scores for previous game's gameTime
+                    switch (currentGameDifficulty){
+                        case EASY:
+                            // TODO: If gameTime > previous saved high score for this difficulty,
+                            // then save the new high score in its place
+                        case MEDIUM:
+
+                        case HARD:
+
+                    }
+
+                    // Now reset the gameTime
+                    gameTime = 0;
+
                     currentGameState = GameState.MENU;
                 }
 
@@ -114,11 +133,17 @@ public class GameWorld {
                 dangerBall.freeze(5/2);
             }
         }
+
+        if(currentGameDifficulty != GameDifficulty.EASY){
+            currentGameDifficulty = GameDifficulty.EASY;
+        }
+
         updateDangerBalls(mainBall.getX(), mainBall.getY(), delta);
         handleBallCollisions();
         handleProjectileCollisions();
         updateProjectiles(delta);
         updateDangerProjectiles(delta);
+        updateGameTime(delta);
 
 
     }
@@ -133,11 +158,17 @@ public class GameWorld {
                 dangerBall.freeze(time++);
             }
         }
+
+        if(currentGameDifficulty != GameDifficulty.MEDIUM){
+            currentGameDifficulty = GameDifficulty.MEDIUM;
+        }
+
         updateDangerBalls(mainBall.getX(), mainBall.getY(), delta);
         handleBallCollisions();
         handleProjectileCollisions();
         updateProjectiles(delta);
         updateDangerProjectiles(delta);
+        updateGameTime(delta);
 
     }
 
@@ -151,11 +182,17 @@ public class GameWorld {
                 dangerBall.freeze(time++);
             }
         }
+
+        if(currentGameDifficulty != GameDifficulty.HARD){
+            currentGameDifficulty = GameDifficulty.HARD;
+        }
+
         updateDangerBalls(mainBall.getX(), mainBall.getY(), delta);
         handleBallCollisions();
         handleProjectileCollisions();
         updateProjectiles(delta);
         updateDangerProjectiles(delta);
+        updateGameTime(delta);
 
     }
 
@@ -197,6 +234,10 @@ public class GameWorld {
             mainBall.reset();
             projectiles.clear();
         }
+    }
+
+    private void updateGameTime(double delta){
+        gameTime += delta;
     }
 
     private void handleProjectileCollisions() {
@@ -422,40 +463,36 @@ public class GameWorld {
     }
 
     public void updateProjectiles(float delta){
+        // Add projectiles to remove to a new list and then remove all at once
+        // this will avoid java.util.ConcurrentModificationExceptions
+        List<Projectile> valuesToRemove = new LinkedList<Projectile>();
         for (Projectile projectile: projectiles) {
             projectile.update(delta);
 
             float deathTimer = projectile.getDeathTimer();
             if(deathTimer <= 0){
-                projectiles.remove(projectile);
+                valuesToRemove.add(projectile);
             }
+            // TODO: still results in a java.util.ConcurrentModificationException
+//            projectiles.removeAll(valuesToRemove);
         }
 
-            // todo: get rid of all the projectiles properly
-//            // Check if the projectile is off the screen
-//            if(projectile.getX() - projectile.getRadius() > gameWidth){
-//                projectiles.remove(projectile);
-//            }
-//            if(projectile.getX() + projectile.getRadius() < 0){
-//                projectiles.remove(projectile);
-//            }
-//            if(projectile.getY() - projectile.getRadius() > gameHeight){
-//                projectiles.remove(projectile);
-//            }
-//            if(projectile.getY() + projectile.getRadius() < 0){
-//                projectiles.remove(projectile);
-//            }
     }
 
     public void updateDangerProjectiles(float delta){
+        // Add projectiles to remove to a new list and then remove all at once
+        // this will avoid java.util.ConcurrentModificationExceptions
+        List<Projectile> valuesToRemove = new LinkedList<Projectile>();
         for (Projectile dangerProjectile: dangerProjectiles) {
             dangerProjectile.updateDangerProjectile(delta, mainBall);
 
             float deathTimer = dangerProjectile.getDeathTimer();
             if(deathTimer <= 0){
-                dangerProjectiles.remove(dangerProjectile);
+                valuesToRemove.add(dangerProjectile);
             }
         }
+        dangerProjectiles.removeAll(valuesToRemove);
+        valuesToRemove.clear();
     }
 
     public GameState getCurrentGameState(){

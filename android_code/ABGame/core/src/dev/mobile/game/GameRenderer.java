@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import java.util.LinkedList;
@@ -28,6 +30,10 @@ public class GameRenderer {
 
     // Required to render shapes
     private ShapeRenderer shapeRenderer;
+
+    // Required to render text
+    SpriteBatch spriteBatch = new SpriteBatch();
+    BitmapFont font = new BitmapFont();
 
     // Game Objects
     private Ball mainBall;
@@ -86,6 +92,12 @@ public class GameRenderer {
                 if(!dangerBalls.isEmpty()){
                     renderDangerBalls();
                 }
+
+                // Render the gameTime
+                spriteBatch.begin();
+                font.draw(spriteBatch, Float.toString(gameworld.gameTime), 10, 10);
+                spriteBatch.end();
+
 
                 break;
             case GAMEOVER:
